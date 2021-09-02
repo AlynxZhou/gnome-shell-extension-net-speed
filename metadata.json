@@ -1,0 +1,9 @@
+{
+  "name": "Net Speed",
+  "description": "Show current net speed on panel.",
+  "uuid": "netspeed@alynx.one",
+  "version": 1,
+  "shell-version": [
+    "40"
+  ]
+}
