@@ -3,5 +3,5 @@
   "description": "Show current net speed on panel.",
   "uuid": "netspeed@alynx.one",
   "version": 3,
-  "shell-version": ["40", "41"]
+  "shell-version": ["40", "41", "42"]
 }
