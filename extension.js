@@ -43,22 +43,16 @@ const getCurrentNetSpeed = (refreshInterval) => {
 
     try {
         const inputFile = Gio.File.new_for_path("/proc/net/dev");
-        const fileInputStream = inputFile.read(null);
-        // See <https://gjs.guide/guides/gobject/basics.html#gobject-construction>.
-        // If we want new operator, we need to pass params in object.
-        // Short param is only used for static constructor.
-        const dataInputStream = new Gio.DataInputStream({
-            "base_stream": fileInputStream
-        });
+        const [, content] = inputFile.load_contents(null);
+        // See <https://github.com/GNOME/gjs/blob/master/doc/ByteArray.md#tostringauint8array-encodingstringstring>.
+        const lines = ByteArray.toString(content).split('\n');
 
         // Caculate the sum of all interfaces' traffic line by line.
         let totalDownBytes = 0;
         let totalUpBytes = 0;
-        let line = null;
-        // See <https://gjs-docs.gnome.org/gio20~2.66p/gio.datainputstream#method-read_line>.
-        while ((line = dataInputStream.read_line(null)[0]) != null) {
-            // See <https://github.com/GNOME/gjs/blob/master/doc/ByteArray.md#tostringauint8array-encodingstringstring>.
-            const fields = ByteArray.toString(line).trim().split(/\W+/);
+
+        for (let i = 0; i < lines.length; ++i) {
+            const fields = lines[i].trim().split(/\W+/);
             if (fields.length <= 2) {
                 continue;
             }
@@ -85,8 +79,6 @@ const getCurrentNetSpeed = (refreshInterval) => {
             totalDownBytes += currentInterfaceDownBytes;
             totalUpBytes += currentInterfaceUpBytes;
         }
-
-        fileInputStream.close(null);
 
         if (lastTotalDownBytes === 0) {
             lastTotalDownBytes = totalDownBytes;
