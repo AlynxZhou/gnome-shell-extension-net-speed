@@ -2,6 +2,7 @@
   "name": "Net Speed",
   "description": "Show current net speed on panel.",
   "uuid": "netspeed@alynx.one",
-  "version": 5,
+  "url": "https://github.com/AlynxZhou/gnome-shell-extension-net-speed/",
+  "version": 6,
   "shell-version": ["40", "41", "42"]
 }
