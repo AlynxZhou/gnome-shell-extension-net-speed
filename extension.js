@@ -107,23 +107,28 @@ const formatSpeedWithUnit = (amount) => {
     }
 
     let digits = 0;
+    let left = 0; // space in left
     // Instead of showing 0.00123456 as 0.00, show it as 0.
     if (amount - 0 < 0.001) {
-    	digits = 3;
-    	// 0.000 M/s, 0.000 K/s, 0.000 B/s.
+    	digits = 0;
+    	left = 3;
+    	//    0 M/s,    0 K/s,    0 B/s.
     } else if (amount >= 100) {
-        // 100.0 M/s, 200.0 K/s, 300.0 B/s.
-        digits = 1;
+        //  100 M/s,  200 K/s,  300 B/s.
+        digits = 0;
+        left = 1;
     } else if (amount >= 10) {
-        // 10.10 M/s, 20.20 K/s, 30.30 B/s.
-        digits = 2;
+        // 10.1 M/s, 20.2 K/s, 30.3 B/s.
+        digits = 1;
+        left = 0;
     } else {
-        // 1.010 M/s, 2.020 K/s, 3.030 B/s.
-        digits = 3;
+        // 1.01 M/s, 2.02 K/s, 3.03 B/s.
+        digits = 2;
+        left = 0;
     }
 
     // See <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toFixed>.
-    return `${amount.toFixed(digits)} ${speedUnits[unitIndex]}`;
+    return `${" ".repeat(left)}${amount.toFixed(digits)} ${speedUnits[unitIndex]}`;
 };
 
 const toSpeedString = (speed) => {
