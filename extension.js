@@ -31,7 +31,7 @@ const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 // const PopupMenu = imports.ui.popupMenu;
 
-const refreshInterval = 3;
+const refreshInterval = 1;
 const speedUnits = [
     "B/s", "K/s", "M/s", "G/s", "T/s", "P/s", "E/s", "Z/s", "Y/s"
 ];
@@ -101,29 +101,25 @@ const getCurrentNetSpeed = (refreshInterval) => {
 
 const formatSpeedWithUnit = (amount) => {
     let unitIndex = 0;
-    while (amount >= 1000 && unitIndex < speedUnits.length - 1) {
+    while (amount >= 100 && unitIndex < speedUnits.length - 1) {
         amount /= 1000;
         ++unitIndex;
     }
 
     let digits = 0;
     let left = 0; // space in left
-    // Instead of showing 0.00123456 as 0.00, show it as 0.
-    if (amount - 0 < 0.001) {
+    // Instead of showing 0.00123456 as 0.0, show it as 0.
+    if (amount - 0 < 0.1) {
     	digits = 0;
-    	left = 3;
-    	//    0 M/s,    0 K/s,    0 B/s.
-    } else if (amount >= 100) {
-        //  100 M/s,  200 K/s,  300 B/s.
+    	left = 2;
+    	//   0 M/s,   0 K/s,   0 B/s.
+    } else if (amount >= 10) {
+        //  10 M/s,  20 K/s,  30 B/s.
         digits = 0;
         left = 1;
-    } else if (amount >= 10) {
-        // 10.1 M/s, 20.2 K/s, 30.3 B/s.
-        digits = 1;
-        left = 0;
     } else {
-        // 1.01 M/s, 2.02 K/s, 3.03 B/s.
-        digits = 2;
+        // 1.1 M/s, 2.2 K/s, 3.3 B/s.
+        digits = 1;
         left = 0;
     }
 
@@ -139,11 +135,11 @@ const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
     _init() {
         // menuAlignment, nameText, dontCreateMenu.
-        super._init(0.000, "Net Speed", true);
+        super._init(0.0, "Net Speed", true);
 
         this._label = new St.Label({
             "y_align": Clutter.ActorAlign.CENTER,
-            "text": "----"
+            "text": "---"
         });
 
         this.add_child(this._label);
