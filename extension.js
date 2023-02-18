@@ -108,12 +108,7 @@ const formatSpeedWithUnit = (amount) => {
 
     let digits = 0;
     let left = 0; // space in left
-    // Instead of showing 0.00123456 as 0.0, show it as 0.
-    if (amount - 0 < 0.1) {
-    	digits = 0;
-    	left = 2;
-    	//   0 M/s,   0 K/s,   0 B/s.
-    } else if (amount >= 10) {
+    if (amount >= 10) {
         //  10 M/s,  20 K/s,  30 B/s.
         digits = 0;
         left = 1;
