@@ -158,6 +158,9 @@ export default class NetSpeed extends Extension {
 	    iface.match(/^vnet[0-9]+/) ||
 	    iface.match(/^tun[0-9]+/) ||
 	    iface.match(/^tap[0-9]+/) ||
+	    iface.match(/^docker[0-9]+/) ||
+	    iface.match(/^utun[0-9]+/) ||
+	    iface.startsWith("veth") ||
 	    isNaN(currentInterfaceDownBytes) ||
 	    isNaN(currentInterfaceUpBytes)) {
 	  continue;
