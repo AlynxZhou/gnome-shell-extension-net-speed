@@ -177,7 +177,7 @@ export default class NetSpeed extends Extension {
       speed["down"] = (sum["down"] - this._lastSum["down"]) / refreshInterval;
       speed["up"] = (sum["up"] - this._lastSum["up"]) / refreshInterval;
 
-      this.lastSum = sum;
+      this._lastSum = sum;
     } catch (e) {
       console.error(e);
     }
