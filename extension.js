@@ -30,6 +30,19 @@ const refreshInterval = 3;
 const speedUnits = [
   "B/s", "K/s", "M/s", "G/s", "T/s", "P/s", "E/s", "Z/s", "Y/s"
 ];
+// `ifb`: Created by python-based bandwidth manager "traffictoll".
+// `lxdbr`: Created by lxd container manager.
+// Add more virtual interface prefixes here.
+const virtualIfacePrefixes = [
+  "lo", "ifb", "lxdbr", "virbr", "br", "vnet", "tun", "tap", "docker", "utun",
+  "wg", "veth"
+];
+
+const isVirtualIface = (name) => {
+  return virtualIfacePrefixes.some((prefix) => {
+    return name.startsWith(prefix);
+  });
+};
 
 const formatSpeedWithUnit = (amount) => {
   let unitIndex = 0;
@@ -62,12 +75,12 @@ const toSpeedString = (speed) => {
 const Indicator = GObject.registerClass(
   class Indicator extends PanelMenu.Button {
     _init() {
-      // menuAlignment, nameText, dontCreateMenu.
+      // `menuAlignment`, `nameText`, `dontCreateMenu`.
       super._init(0.0, "Net Speed", true);
 
       this._label = new St.Label({
         "y_align": Clutter.ActorAlign.CENTER,
-        "text": "---"
+        "text": toSpeedString({"down": 0, "up": 0})
       });
 
       this.add_child(this._label);
@@ -86,17 +99,17 @@ export default class NetSpeed extends Extension {
     this._uuid = metadata.uuid;
 
     this._textDecoder = new TextDecoder();
-    this._lastTotalDownBytes = 0;
-    this._lastTotalUpBytes = 0;
+    this._lastSum = {"down": 0, "up": 0};
+    this._timeout = null;
   }
 
   enable() {
-    this._lastTotalDownBytes = 0;
-    this._lastTotalUpBytes = 0;
+    this._lastSum["down"] = 0;
+    this._lastSum["up"] = 0;
 
     this._indicator = new Indicator();
-    // role, indicator, position, box.
-    // -1 is not OK, because it will show in the right side of system menu.
+    // `role`, `indicator`, `position`, `box`.
+    // `-1` is not OK for position, it will show at the right of system menu.
     Main.panel.addToStatusArea(this._uuid, this._indicator, 0, "right");
 
     this._timeout = GLib.timeout_add_seconds(
@@ -132,58 +145,39 @@ export default class NetSpeed extends Extension {
       //
       // `ByteArray` is deprecated with ES Module, standard JavaScript
       // `TextDecoder` should be used here.
-      const lines = this._textDecoder.decode(content).split('\n');
+      //
+      // Caculate the sum of all interfaces line by line, skip table head.
+      const sum = this._textDecoder.decode(content).split("\n").map((line) => {
+        return line.trim().split(/\W+/);
+      }).filter((fields) => {
+        return fields.length > 2;
+      }).map((fields) => {
+        return {
+          "name": fields[0],
+          "down": Number.parseInt(fields[1]),
+          "up": Number.parseInt(fields[9])
+        };
+      }).filter((iface) => {
+        return !(isNaN(iface["down"]) || isNaN(iface["up"]) ||
+                 isVirtualIface(iface["name"]));
+      }).reduce((sum, iface) => {
+        return {
+          "down": sum["down"] + iface["down"],
+          "up": sum["up"] + iface["up"]
+        };
+      }, {"down": 0, "up": 0});
 
-      // Caculate the sum of all interfaces line by line.
-      let totalDownBytes = 0;
-      let totalUpBytes = 0;
-
-      for (let i = 0; i < lines.length; ++i) {
-        const fields = lines[i].trim().split(/\W+/);
-        if (fields.length <= 2) {
-	  continue;
-        }
-
-        // Skip virtual interfaces.
-        const iface = fields[0];
-        const currentInterfaceDownBytes = Number.parseInt(fields[1]);
-        const currentInterfaceUpBytes = Number.parseInt(fields[9]);
-        if (iface === "lo" ||
-	    // Created by python-based bandwidth manager "traffictoll".
-	    iface.match(/^ifb[0-9]+/) ||
-	    // Created by lxd container manager.
-	    iface.match(/^lxdbr[0-9]+/) ||
-	    iface.match(/^virbr[0-9]+/) ||
-	    iface.match(/^br[0-9]+/) ||
-	    iface.match(/^vnet[0-9]+/) ||
-	    iface.match(/^tun[0-9]+/) ||
-	    iface.match(/^tap[0-9]+/) ||
-	    iface.match(/^docker[0-9]+/) ||
-	    iface.match(/^utun[0-9]+/) ||
-	    iface.startsWith("veth") ||
-	    isNaN(currentInterfaceDownBytes) ||
-	    isNaN(currentInterfaceUpBytes)) {
-	  continue;
-        }
-
-        totalDownBytes += currentInterfaceDownBytes;
-        totalUpBytes += currentInterfaceUpBytes;
+      if (this._lastSum["down"] === 0) {
+        this._lastSum["down"] = sum["down"];
+      }
+      if (this._lastSum["up"] === 0) {
+        this._lastSum["up"] = sum["up"];
       }
 
-      if (this._lastTotalDownBytes === 0) {
-        this._lastTotalDownBytes = totalDownBytes;
-      }
-      if (this._lastTotalUpBytes === 0) {
-        this._lastTotalUpBytes = totalUpBytes;
-      }
+      speed["down"] = (sum["down"] - this._lastSum["down"]) / refreshInterval;
+      speed["up"] = (sum["up"] - this._lastSum["up"]) / refreshInterval;
 
-      speed["down"] = (totalDownBytes - this._lastTotalDownBytes) /
-        refreshInterval;
-      speed["up"] = (totalUpBytes - this._lastTotalUpBytes) /
-        refreshInterval;
-
-      this._lastTotalDownBytes = totalDownBytes;
-      this._lastTotalUpBytes = totalUpBytes;
+      this.lastSum = sum;
     } catch (e) {
       console.error(e);
     }
