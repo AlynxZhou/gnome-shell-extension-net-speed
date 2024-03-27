@@ -97,15 +97,12 @@ export default class NetSpeed extends Extension {
 
     this._metadata = metadata;
     this._uuid = metadata.uuid;
-
-    this._textDecoder = new TextDecoder();
-    this._lastSum = {"down": 0, "up": 0};
-    this._timeout = null;
   }
 
   enable() {
-    this._lastSum["down"] = 0;
-    this._lastSum["up"] = 0;
+    this._textDecoder = new TextDecoder();
+    this._lastSum = {"down": 0, "up": 0};
+    this._timeout = null;
 
     this._indicator = new Indicator();
     // `role`, `indicator`, `position`, `box`.
@@ -129,6 +126,8 @@ export default class NetSpeed extends Extension {
       this._indicator.destroy();
       this._indicator = null;
     }
+    this._textDecoder = null;
+    this._lastSum = null;
     if (this._timeout != null) {
       GLib.source_remove(this._timeout);
       this._timeout = null;
