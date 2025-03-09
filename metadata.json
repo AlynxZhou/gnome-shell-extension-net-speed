@@ -4,5 +4,5 @@
   "uuid": "netspeed@alynx.one",
   "url": "https://github.com/AlynxZhou/gnome-shell-extension-net-speed/",
   "version": 12,
-  "shell-version": ["45", "46", "47"]
+  "shell-version": ["45", "46", "47", "48"]
 }
